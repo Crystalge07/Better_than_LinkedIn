@@ -29,16 +29,6 @@ def apply_url_path(url: str) -> str:
     return urlparse(url.strip()).path.rstrip("/").lower()
 
 
-def apply_url_registrable_domain(url: str) -> str:
-    netloc = apply_url_netloc(url)
-    if netloc.startswith("www."):
-        netloc = netloc[4:]
-    parts = netloc.split(".")
-    if len(parts) >= 2:
-        return ".".join(parts[-2:])
-    return netloc
-
-
 def score_apply_url(url: str) -> int:
     """Higher score = more direct apply link."""
     lowered = url.strip().lower()
@@ -51,8 +41,13 @@ def score_apply_url(url: str) -> int:
     return score
 
 
-def urls_conflict(url_a: str, url_b: str, *, netloc_counts: dict[str, int] | None = None) -> bool:
-    """True when two direct apply URLs must not be merged."""
+def urls_conflict(url_a: str, url_b: str) -> bool:
+    """True when two apply URLs must not be merged.
+
+    Same netloc + same path → compatible.
+    Same netloc + different path → conflict.
+    Different netloc → always conflict (no cross-host syndication merge).
+    """
     if not url_a.strip() or not url_b.strip():
         return False
     if url_a.strip() == url_b.strip():
@@ -60,25 +55,10 @@ def urls_conflict(url_a: str, url_b: str, *, netloc_counts: dict[str, int] | Non
 
     netloc_a = apply_url_netloc(url_a)
     netloc_b = apply_url_netloc(url_b)
-    path_a = apply_url_path(url_a)
-    path_b = apply_url_path(url_b)
-
-    if netloc_a == netloc_b:
-        return path_a != path_b
-
-    domain_a = apply_url_registrable_domain(url_a)
-    domain_b = apply_url_registrable_domain(url_b)
-    if domain_a != domain_b:
+    if netloc_a != netloc_b:
         return True
 
-    # Same employer domain on different hosts (e.g. apply.careers.* vs jobs.careers.*).
-    # Allow syndication only when each host appears once in the fingerprint group.
-    if netloc_counts is not None:
-        if netloc_counts.get(netloc_a, 0) > 1 or netloc_counts.get(netloc_b, 0) > 1:
-            return True
-        return False
-
-    return path_a != path_b
+    return apply_url_path(url_a) != apply_url_path(url_b)
 
 
 def pick_preferred_apply_url(urls: list[str]) -> str:

@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter
-
 from app.normalize.apply_url import (
-    apply_url_netloc,
     pick_preferred_apply_url,
     score_apply_url,
     urls_conflict,
@@ -23,7 +20,7 @@ def merge_jobs(jobs: list[Job]) -> list[Job]:
         by_fingerprint.setdefault(job.fingerprint, []).append(job)
 
     merged: list[Job] = []
-    for fingerprint, group in by_fingerprint.items():
+    for group in by_fingerprint.values():
         for cluster in _cluster_by_url_compatibility(group):
             merged.append(merge_job_group(cluster))
     return sorted(merged, key=_job_sort_key)
@@ -56,20 +53,12 @@ def merge_job_group(jobs: list[Job]) -> Job:
 
 
 def _cluster_by_url_compatibility(jobs: list[Job]) -> list[list[Job]]:
-    netloc_counts = Counter(apply_url_netloc(job.apply_url) for job in jobs)
     clusters: list[list[Job]] = []
 
     for job in jobs:
         placed = False
         for cluster in clusters:
-            if all(
-                not urls_conflict(
-                    job.apply_url,
-                    other.apply_url,
-                    netloc_counts=netloc_counts,
-                )
-                for other in cluster
-            ):
+            if all(not urls_conflict(job.apply_url, other.apply_url) for other in cluster):
                 cluster.append(job)
                 placed = True
                 break

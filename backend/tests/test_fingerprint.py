@@ -1,4 +1,5 @@
 from app.normalize.fingerprint import compute_fingerprint, normalize_company, normalize_title
+from tests.conftest import jobs_from_fixture_group
 
 
 def test_normalize_title_strips_new_grad_prefix():
@@ -12,9 +13,6 @@ def test_normalize_company_strips_suffix():
 def test_visa_pair_shares_fingerprint_across_feeds():
     jobs = jobs_from_fixture_group("merge_false_visa_highlands_ranch")
     assert jobs[0].fingerprint == jobs[1].fingerprint
-
-
-from tests.conftest import expected_merged_count, jobs_from_fixture_group
 
 
 def test_microsoft_swe_pair_shares_fingerprint():

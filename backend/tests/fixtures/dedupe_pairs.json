@@ -7,57 +7,6 @@
     }
   },
   "groups": {
-    "merge_true_microsoft_firmware": {
-      "expect_merged_count": 1,
-      "note": "Same Microsoft firmware requisition syndicated across career subdomains.",
-      "listings": [
-        {
-          "feed_tag": "simplify_internships",
-          "raw": {
-            "source": "Simplify",
-            "category": "Hardware",
-            "company_name": "Microsoft",
-            "id": "575854f6-a426-40f8-852a-ce77dbc45e55",
-            "title": "Firmware Engineer",
-            "active": false,
-            "terms": [
-              "Spring 2026"
-            ],
-            "date_updated": 1769027794,
-            "date_posted": 1769027794,
-            "url": "https://apply.careers.microsoft.com/careers/job/1970393556744805",
-            "locations": [
-              "Redmond, WA"
-            ],
-            "company_url": "https://simplify.jobs/c/Microsoft",
-            "is_visible": true,
-            "sponsorship": "Other",
-            "degrees": [
-              "Bachelor's"
-            ]
-          }
-        },
-        {
-          "feed_tag": "vanshb03_new_grad",
-          "raw": {
-            "date_updated": 1758393065,
-            "url": "https://jobs.careers.microsoft.com/global/en/job/1847616/Firmware-Engineer",
-            "locations": [
-              "Redmond, WA"
-            ],
-            "sponsorship": "Other",
-            "active": false,
-            "company_name": "Microsoft",
-            "title": "Firmware Engineer",
-            "source": "vanshb03",
-            "id": "d942c1d5-2b25-422d-93fd-62e69e11b429",
-            "date_posted": 1753370249,
-            "company_url": "",
-            "is_visible": true
-          }
-        }
-      ]
-    },
     "merge_false_microsoft_swe_redmond": {
       "expect_merged_count": 4,
       "note": "Distinct Microsoft SWE requisitions sharing one fingerprint \u2014 must not collapse.",

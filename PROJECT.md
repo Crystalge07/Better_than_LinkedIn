@@ -229,7 +229,12 @@ Ship at step 1. Every later step is additive.
 
 **Notes (2026-07-11):** Step 1 shipped with API defaults: last 30 days, open postings only.
 Step 2 adds `scripts/sync.py` — diff/upsert, `first_seen`/`last_seen`/`active` tracking,
-per-feed error isolation, optional `--loop` for local dev. Single feed (Simplify internships).
-Step 3 adds vanshb03 new-grad feed, pure dedupe module (`fingerprint` + `apply_url` conflict guard),
-real cross-feed fixtures, pytest suite. DB unique key is now `(fingerprint, apply_url)`.
-Run `scripts/migrate_step3.sql` on existing databases before syncing.
+per-feed error isolation, optional `--loop` for local dev.
+Step 3: vanshb03 new-grad feed + pure dedupe — **exact fingerprint + URL-conflict guard,
+no cross-host merge, no verified positive merge case in current two feeds** (cross-feed
+duplication is rare here). Fixtures are four negatives only. DB unique key is
+`(fingerprint, apply_url)`. Run `scripts/migrate_step3.sql` on existing DBs before syncing.
+
+**Known miss (revisit after third feed):** AIG Early Career Gen AI / Data Engineering —
+same Workday URL (`JR2505609`) in both feeds, but different titles → different fingerprints.
+We deliberately don't merge on exact URL yet; revisit if same-URL dupes become common.
