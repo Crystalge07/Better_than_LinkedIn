@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -11,6 +11,9 @@ class Base(DeclarativeBase):
 
 class JobRow(Base):
     __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint("fingerprint", "apply_url", name="uq_jobs_fingerprint_apply_url"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     company: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -25,7 +28,7 @@ class JobRow(Base):
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     posting_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    fingerprint: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

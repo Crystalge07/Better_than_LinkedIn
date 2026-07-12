@@ -21,11 +21,14 @@ def sync_jobs(
     """Diff/upsert jobs from a sync run. Returns (inserted, updated, deactivated)."""
     inserted = 0
     updated = 0
-    merged_jobs = _merge_by_fingerprint(jobs)
-    seen_fingerprints = {job.fingerprint for job in merged_jobs}
+    seen_keys = {(job.fingerprint, job.apply_url) for job in jobs}
 
-    for job in merged_jobs:
-        existing = session.query(JobRow).filter_by(fingerprint=job.fingerprint).one_or_none()
+    for job in jobs:
+        existing = (
+            session.query(JobRow)
+            .filter_by(fingerprint=job.fingerprint, apply_url=job.apply_url)
+            .one_or_none()
+        )
         if existing is None:
             session.add(
                 JobRow(
@@ -52,13 +55,10 @@ def sync_jobs(
 
     deactivated = 0
     if successful_sources:
-        stale_rows = (
-            session.query(JobRow)
-            .filter(JobRow.active.is_(True))
-            .filter(JobRow.fingerprint.notin_(seen_fingerprints))
-            .all()
-        )
+        stale_rows = session.query(JobRow).filter(JobRow.active.is_(True)).all()
         for row in stale_rows:
+            if (row.fingerprint, row.apply_url) in seen_keys:
+                continue
             if not any(source in successful_sources for source in row.sources):
                 continue
             row.active = False
@@ -102,23 +102,6 @@ def _apply_job_update(row: JobRow, job: Job, synced_at: datetime) -> bool:
 
     row.last_seen = synced_at
     return changed
-
-
-def _merge_by_fingerprint(jobs: list[Job]) -> list[Job]:
-    """Collapse duplicate fingerprints within one ingest batch."""
-    merged: dict[str, Job] = {}
-    for job in jobs:
-        existing = merged.get(job.fingerprint)
-        if existing is None:
-            merged[job.fingerprint] = job
-            continue
-        merged[job.fingerprint] = job.model_copy(
-            update={
-                "sources": list(dict.fromkeys(existing.sources + job.sources)),
-                "date_posted": min(existing.date_posted, job.date_posted),
-            }
-        )
-    return list(merged.values())
 
 
 def list_jobs(

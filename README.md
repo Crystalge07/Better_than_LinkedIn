@@ -2,7 +2,7 @@
 
 A job board that ingests community-maintained GitHub JSON feeds into Postgres and serves them via FastAPI + React.
 
-**Current status: Step 2** — scheduled sync with freshness tracking (`first_seen` / `last_seen` / `active`).
+**Current status: Step 3** — two feeds, pure dedupe with URL conflict guard, pytest fixtures.
 
 ## Architecture
 
@@ -48,6 +48,12 @@ cp .env.example .env
 
 Set `DATABASE_URL` in `.env` (see `.env.example`). Swapping to hosted Postgres later is a one-line env change.
 
+**Existing DB from Step 1/2:** apply the Step 3 migration before syncing:
+
+```bash
+psql jobboard -f scripts/migrate_step3.sql
+```
+
 ### 3. Sync jobs
 
 ```bash
@@ -90,11 +96,14 @@ backend/
     schemas/job.py              # Internal Job contract (Pydantic)
     fetch/client.py             # HTTP fetch for feed URLs
     normalize/
-      fingerprint.py            # Basic fingerprint (expanded in step 3)
+      fingerprint.py            # Normalization + fingerprint hash
+      apply_url.py              # URL conflict guard + apply_url scoring
+      dedupe.py                 # Pure merge_jobs / merge_job_group
       adapters/
         base.py                 # FeedAdapter ABC
         listings_json.py        # Shared listings.json field mapping
         simplify_internships.py # SimplifyJobs Summer2026-Internships
+        vanshb03_new_grad.py    # vanshb03 New-Grad-2026
     store/
       models.py                 # SQLAlchemy ORM
       database.py
@@ -103,7 +112,9 @@ backend/
       runner.py                 # Fetch feeds, orchestrate sync
     serve/main.py               # FastAPI app
   scripts/sync.py               # Scheduled sync entrypoint
+  scripts/migrate_step3.sql     # DB migration for dedupe URL guard
   scripts/ingest.py             # Deprecated wrapper → sync
+  tests/                        # pytest (pure dedupe/fingerprint tests)
 frontend/
   src/App.jsx                   # Plain job list
 ```
@@ -124,6 +135,18 @@ frontend/
 | `GET /health` | Health check |
 | `GET /api/jobs?active_only=true&open_only=true&posted_within_days=30` | List open, in-feed jobs posted recently, newest first |
 
-## Feed (step 1)
+## Feeds
 
-- https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json
+| Tag | Feed |
+|-----|------|
+| `simplify_internships` | https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json |
+| `vanshb03_new_grad` | https://raw.githubusercontent.com/vanshb03/New-Grad-2026/dev/.github/scripts/listings.json |
+
+## Tests
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+PYTHONPATH=. pytest tests/
+```

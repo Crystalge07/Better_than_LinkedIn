@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.fetch.client import fetch_json
 from app.normalize.adapters.base import FeedAdapter
 from app.normalize.adapters.simplify_internships import SimplifyInternshipsAdapter
+from app.normalize.adapters.vanshb03_new_grad import Vanshb03NewGradAdapter
+from app.normalize.dedupe import merge_jobs
 from app.schemas.job import Job
 from app.store.repository import sync_jobs
 
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 FEED_ADAPTERS: list[FeedAdapter] = [
     SimplifyInternshipsAdapter(),
+    Vanshb03NewGradAdapter(),
 ]
 
 
@@ -50,9 +53,17 @@ def run_sync(session: Session) -> SyncRunStats:
         fetched_jobs.extend(jobs)
         logger.info("Normalized %d jobs from %s", len(jobs), adapter.source_name)
 
+    deduped_jobs = merge_jobs(fetched_jobs)
+    if len(deduped_jobs) != len(fetched_jobs):
+        logger.info(
+            "Deduped %d fetched jobs to %d unique postings",
+            len(fetched_jobs),
+            len(deduped_jobs),
+        )
+
     inserted, updated, deactivated = sync_jobs(
         session,
-        fetched_jobs,
+        deduped_jobs,
         successful_sources=successful_sources,
         synced_at=synced_at,
     )
