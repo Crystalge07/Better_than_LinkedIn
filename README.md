@@ -2,7 +2,7 @@
 
 A job board that ingests community-maintained GitHub JSON feeds into Postgres and serves them via FastAPI + React.
 
-**Current status: Step 3** — two feeds, pure dedupe with URL conflict guard, pytest fixtures.
+**Current status: Step 4** — DB-side filter/search (title, location, date range, free-text).
 
 ## Architecture
 
@@ -133,7 +133,23 @@ frontend/
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `GET /api/jobs?active_only=true&open_only=true&posted_within_days=30` | List open, in-feed jobs posted recently, newest first |
+| `GET /api/jobs` | List jobs (filters applied in Postgres) |
+
+### `/api/jobs` query params
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `active_only` | `true` | Still present in a feed |
+| `open_only` | `true` | Applications open on source site |
+| `posted_within_days` | `30` | Used when `posted_after` / `posted_before` omitted |
+| `posted_after` | — | ISO date; inclusive start of UTC day |
+| `posted_before` | — | ISO date; inclusive end of UTC day |
+| `title` | — | Case-insensitive substring on job title |
+| `location` | — | Case-insensitive substring against `locations` array |
+| `q` | — | Free-text over title **or** company |
+
+All string filters are bound SQLAlchemy parameters (not interpolated into raw SQL).
+Filtering happens in the database; the frontend must not filter the full dataset client-side.
 
 ## Feeds
 

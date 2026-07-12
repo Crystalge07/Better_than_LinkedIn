@@ -3,12 +3,28 @@
 import logging
 from datetime import datetime
 
+from sqlalchemy import func, literal, or_
 from sqlalchemy.orm import Session
 
 from app.schemas.job import Job, JobRead
 from app.store.models import JobRow
 
 logger = logging.getLogger(__name__)
+
+_LIKE_ESCAPE = "\\"
+
+
+def _contains_pattern(value: str) -> str:
+    """Build a LIKE/ILIKE contains pattern. Caller passes this as a bound param value.
+
+    Escapes LIKE metacharacters in user input so they are matched literally.
+    """
+    escaped = (
+        value.replace(_LIKE_ESCAPE, _LIKE_ESCAPE + _LIKE_ESCAPE)
+        .replace("%", _LIKE_ESCAPE + "%")
+        .replace("_", _LIKE_ESCAPE + "_")
+    )
+    return f"%{escaped}%"
 
 
 def sync_jobs(
@@ -110,8 +126,12 @@ def list_jobs(
     in_feed_only: bool = True,
     open_only: bool = True,
     posted_since: datetime | None = None,
+    posted_until: datetime | None = None,
+    title: str | None = None,
+    location: str | None = None,
+    q: str | None = None,
 ) -> list[JobRead]:
-    """List jobs. in_feed_only filters to rows still present in a feed (active=True)."""
+    """List jobs with optional filters. All user strings are bound parameters (never raw SQL)."""
     query = session.query(JobRow).order_by(JobRow.date_posted.desc())
     if in_feed_only:
         query = query.filter(JobRow.active.is_(True))
@@ -119,6 +139,33 @@ def list_jobs(
         query = query.filter(JobRow.posting_active.is_(True))
     if posted_since is not None:
         query = query.filter(JobRow.date_posted >= posted_since)
+    if posted_until is not None:
+        query = query.filter(JobRow.date_posted <= posted_until)
+
+    title_term = (title or "").strip()
+    if title_term:
+        # Bound param via ColumnElement.ilike — pattern is a Python value, not SQL text.
+        query = query.filter(
+            JobRow.title.ilike(_contains_pattern(title_term), escape=_LIKE_ESCAPE)
+        )
+
+    location_term = (location or "").strip()
+    if location_term:
+        # Match city/location substrings against the locations array without string-building SQL.
+        locations_text = func.array_to_string(JobRow.locations, literal(" "))
+        query = query.filter(
+            locations_text.ilike(_contains_pattern(location_term), escape=_LIKE_ESCAPE)
+        )
+
+    search_term = (q or "").strip()
+    if search_term:
+        pattern = _contains_pattern(search_term)
+        query = query.filter(
+            or_(
+                JobRow.title.ilike(pattern, escape=_LIKE_ESCAPE),
+                JobRow.company.ilike(pattern, escape=_LIKE_ESCAPE),
+            )
+        )
 
     rows = query.all()
     return [_row_to_schema(row) for row in rows]

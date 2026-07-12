@@ -223,9 +223,10 @@ Ship at step 1. Every later step is additive.
 - [x] Step 1 — schema + SimplifyJobs adapter + store + list UI
 - [x] Step 2 — scheduled sync + freshness tracking
 - [x] Step 3 — second feed + dedupe + tests
-- [ ] Step 4 — filtering + search
+- [x] Step 4 — filtering + search
 - [ ] Step 5 — application tracker
 - [ ] Deploy — Supabase (DB) + GitHub Actions or Railway (scheduled sync)
+- [ ] Future — company-type filtering (tech/CPG/Fortune 500); needs company→category map not in feeds
 
 **Notes (2026-07-11):** Step 1 shipped with API defaults: last 30 days, open postings only.
 Step 2 adds `scripts/sync.py` — diff/upsert, `first_seen`/`last_seen`/`active` tracking,
@@ -238,3 +239,8 @@ duplication is rare here). Fixtures are four negatives only. DB unique key is
 **Known miss (revisit after third feed):** AIG Early Career Gen AI / Data Engineering —
 same Workday URL (`JR2505609`) in both feeds, but different titles → different fingerprints.
 We deliberately don't merge on exact URL yet; revisit if same-URL dupes become common.
+
+**Step 4:** API + UI filters for `q` (title/company), `title`, `location` (city substring on
+`locations[]`), and date range (`posted_after` / `posted_before`, else `posted_within_days=30`).
+All filtering runs in Postgres via SQLAlchemy bound parameters — never browser-side, never
+raw-SQL string interpolation. UI result count uses `jobs.length` only until pagination.
