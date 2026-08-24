@@ -1,0 +1,18 @@
+---
+description: Core product, architecture, and ingestion rules
+alwaysApply: true
+---
+
+# Job board project rules
+
+This is an aggregator for internships and new-grad / early-career jobs at **large companies across industries**, not a tech-only board.
+
+Data flow is one way: GitHub JSON feeds and public ATS job-board JSON -> normalize -> dedupe -> Postgres -> FastAPI -> React. The website never fetches GitHub or company boards live.
+
+- Keep fetch / normalize / dedupe / store / serve in separate modules.
+- Prefer public JSON job-board APIs (Greenhouse, Lever, Ashby, Workday CXS). Do not HTML-scrape career pages or log in.
+- Company names alone are not a source. `backend/data/companies.json` needs an ATS board slug or career URL.
+- Company-board pulls keep intern / new-grad / early-career titles only.
+- Config via env vars. Never commit secrets. `date_posted` is a real datetime.
+- Sync must isolate per-feed and per-company failures. Do not delete stale jobs; mark `active=false`.
+- If you would deviate from `PROJECT.md`, ask first.

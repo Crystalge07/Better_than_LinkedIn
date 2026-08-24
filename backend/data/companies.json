@@ -1,0 +1,212 @@
+{
+  "how_to_add": "A company NAME is not enough. Add the public career-board identifier: Greenhouse/Lever/Ashby `board` slug, or a Workday `career_url` like https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite. Paste a jobs.lever.co / job-boards.greenhouse.io / jobs.ashbyhq.com / myworkdayjobs.com URL in career_url and ats+board will be inferred. We only pull intern / new-grad / early-career titles from company boards.",
+  "companies": [
+    {
+      "name": "Stripe",
+      "industry": "fintech",
+      "ats": "greenhouse",
+      "board": "stripe",
+      "career_url": "https://job-boards.greenhouse.io/stripe"
+    },
+    {
+      "name": "Airbnb",
+      "industry": "travel",
+      "ats": "greenhouse",
+      "board": "airbnb"
+    },
+    {
+      "name": "SpaceX",
+      "industry": "aerospace",
+      "ats": "greenhouse",
+      "board": "spacex"
+    },
+    {
+      "name": "Anduril",
+      "industry": "defense",
+      "ats": "greenhouse",
+      "board": "andurilindustries"
+    },
+    {
+      "name": "Jump Trading",
+      "industry": "finance",
+      "ats": "greenhouse",
+      "board": "jumptrading"
+    },
+    {
+      "name": "Coinbase",
+      "industry": "fintech",
+      "ats": "greenhouse",
+      "board": "coinbase"
+    },
+    {
+      "name": "Figma",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "figma"
+    },
+    {
+      "name": "Databricks",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "databricks"
+    },
+    {
+      "name": "Dropbox",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "dropbox"
+    },
+    {
+      "name": "Robinhood",
+      "industry": "fintech",
+      "ats": "greenhouse",
+      "board": "robinhood"
+    },
+    {
+      "name": "Pinterest",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "pinterest"
+    },
+    {
+      "name": "Discord",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "discord"
+    },
+    {
+      "name": "Reddit",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "reddit"
+    },
+    {
+      "name": "Cloudflare",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "cloudflare"
+    },
+    {
+      "name": "Twilio",
+      "industry": "tech",
+      "ats": "greenhouse",
+      "board": "twilio"
+    },
+    {
+      "name": "Block",
+      "industry": "fintech",
+      "ats": "greenhouse",
+      "board": "block"
+    },
+    {
+      "name": "Instacart",
+      "industry": "retail",
+      "ats": "greenhouse",
+      "board": "instacart"
+    },
+    {
+      "name": "Duolingo",
+      "industry": "education",
+      "ats": "greenhouse",
+      "board": "duolingo"
+    },
+    {
+      "name": "Peloton",
+      "industry": "consumer",
+      "ats": "greenhouse",
+      "board": "peloton"
+    },
+    {
+      "name": "Sweetgreen",
+      "industry": "consumer",
+      "ats": "greenhouse",
+      "board": "sweetgreen"
+    },
+    {
+      "name": "Glossier",
+      "industry": "cpg",
+      "ats": "greenhouse",
+      "board": "glossier"
+    },
+    {
+      "name": "Harry's",
+      "industry": "cpg",
+      "ats": "greenhouse",
+      "board": "harrys"
+    },
+    {
+      "name": "Spotify",
+      "industry": "media",
+      "ats": "lever",
+      "board": "spotify",
+      "career_url": "https://jobs.lever.co/spotify"
+    },
+    {
+      "name": "Palantir",
+      "industry": "tech",
+      "ats": "lever",
+      "board": "palantir"
+    },
+    {
+      "name": "OpenAI",
+      "industry": "tech",
+      "ats": "ashby",
+      "board": "openai",
+      "career_url": "https://jobs.ashbyhq.com/openai"
+    },
+    {
+      "name": "Ramp",
+      "industry": "fintech",
+      "ats": "ashby",
+      "board": "ramp"
+    },
+    {
+      "name": "Linear",
+      "industry": "tech",
+      "ats": "ashby",
+      "board": "linear"
+    },
+    {
+      "name": "NVIDIA",
+      "industry": "semiconductors",
+      "ats": "workday",
+      "career_url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"
+    },
+    {
+      "name": "HP",
+      "industry": "hardware",
+      "ats": "workday",
+      "career_url": "https://hp.wd5.myworkdayjobs.com/ExternalCareerSite"
+    },
+    {
+      "name": "Caterpillar",
+      "industry": "industrials",
+      "ats": "workday",
+      "career_url": "https://cat.wd5.myworkdayjobs.com/CaterpillarCareers"
+    },
+    {
+      "name": "Pfizer",
+      "industry": "pharma",
+      "ats": "workday",
+      "career_url": "https://pfizer.wd1.myworkdayjobs.com/PfizerCareers"
+    },
+    {
+      "name": "3M",
+      "industry": "industrials",
+      "ats": "workday",
+      "career_url": "https://3m.wd1.myworkdayjobs.com/Search"
+    },
+    {
+      "name": "Abbott",
+      "industry": "healthcare",
+      "ats": "workday",
+      "career_url": "https://abbott.wd5.myworkdayjobs.com/abbottcareers"
+    },
+    {
+      "name": "Disney",
+      "industry": "media",
+      "ats": "workday",
+      "career_url": "https://disney.wd5.myworkdayjobs.com/disneycareer"
+    }
+  ]
+}

@@ -139,7 +139,7 @@ export default function App() {
   return (
     <main className="page">
       <h1>Job Aggregator</h1>
-      <p className="subtitle">Open internship and new-grad postings from community feeds</p>
+      <p className="subtitle">Internships and new-grad roles from community feeds and company career boards — not just tech</p>
 
       <form
         className="filters"

@@ -26,8 +26,8 @@ def _run_once() -> int:
     finally:
         session.close()
 
-    if stats.feeds_ok == 0:
-        logger.error("All feeds failed; no changes applied")
+    if stats.feeds_ok == 0 and stats.boards_ok == 0:
+        logger.error("All feeds and company boards failed; no changes applied")
         return 1
     return 0
 

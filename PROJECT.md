@@ -10,18 +10,24 @@
 
 ## 1. Purpose / What this is
 
-A job board website that aggregates new-grad and internship postings from several free,
-community-maintained GitHub JSON feeds. It normalizes them into one schema, de-duplicates
-across sources, keeps the data fresh via a scheduled background sync, and serves a
-filterable/searchable UI with an application tracker.
+A job board website that aggregates new-grad and internship postings from free
+community GitHub JSON feeds **and** public company career-board APIs (Greenhouse, Lever,
+Ashby, Workday CXS). It normalizes them into one schema, de-duplicates across sources,
+keeps the data fresh via a scheduled background sync, and serves a filterable UI
+with an application tracker still to come.
+
+Coverage goal: huge companies across industries (CPG, industrials, healthcare, finance,
+media, tech), not a tech-intern list.
 
 **The core insight:** company career pages get posted to their ATS (Workday/Greenhouse/etc.)
 first and syndicated to LinkedIn/Indeed weeks later. These community feeds pull from the
 source early. Aggregating them = seeing jobs before the big boards do.
 
 **What this is NOT (scope boundaries):**
-- We do NOT scrape company websites ourselves. We consume feeds where others already did that.
-- We do NOT build our own ATS scrapers (yet). Feeds are the raw material.
+- We do NOT HTML-scrape career pages or log into ATS products.
+- We DO poll public job-board JSON APIs (Greenhouse/Lever/Ashby documented boards, Workday CXS)
+  when a company is listed with a board slug or `*.myworkdayjobs.com` career URL.
+- A list of 1,000 **names** is not enough. Each company needs its board identifier.
 - We are an aggregator + a good interface on top. That's the whole product.
 
 ---
@@ -29,7 +35,7 @@ source early. Aggregating them = seeing jobs before the big boards do.
 ## 2. Architecture (one direction of data flow)
 
 ```
-GitHub JSON feeds
+GitHub JSON feeds + company ATS JSON
       |
       v
 Ingestion pipeline  (fetch -> normalize -> dedupe -> diff -> upsert)   <-- the engine we build
@@ -44,8 +50,8 @@ FastAPI backend
 React frontend      (filter / search / application tracker)
 ```
 
-**Hard rule:** the website reads ONLY from our Postgres DB. It NEVER fetches GitHub live.
-Only the scheduled ingestion job touches GitHub.
+**Hard rule:** the website reads ONLY from our Postgres DB. It NEVER fetches GitHub or
+company boards live. Only the scheduled ingestion job touches those sources.
 
 Keep these as SEPARATE modules — no god functions:
 - fetching (get raw JSON from feeds)
@@ -77,7 +83,9 @@ STEP 1 uses ONLY the first feed. Others come in at STEP 3.
 |-----|------|-----|
 | STEP 1 | SimplifyJobs internships | https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json |
 | STEP 3 (2nd source, creates real dupes) | vanshb03 new-grad | https://raw.githubusercontent.com/vanshb03/New-Grad-2026/dev/.github/scripts/listings.json |
-| STEP 3+ | SimplifyJobs new-grad | https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json |
+| STEP 3+ (now on) | SimplifyJobs new-grad | https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json |
+| Extra community | Simplify internships 2027, vanshb03 2027, SpeedyApply SWE/AI markdown, WarpJobs JSON, Heynish DACH internships | see README Feeds table |
+| Ongoing | Company boards | `backend/data/companies.json` (Greenhouse / Lever / Ashby / Workday JSON) |
 
 These feeds update roughly every 30 min. Poll no more often than every 30–60 min.
 Trusted spine = SimplifyJobs. vanshb03 second. Others (zapply/jobright) are lead-gen for
@@ -224,6 +232,8 @@ Ship at step 1. Every later step is additive.
 - [x] Step 2 — scheduled sync + freshness tracking
 - [x] Step 3 — second feed + dedupe + tests
 - [x] Step 4 — filtering + search
+- [x] Step 4b — Simplify new-grad feed
+- [x] Step 4c — company career-board JSON pulls (early-career title filter + seed list)
 - [ ] Step 5 — application tracker
 - [ ] Deploy — Supabase (DB) + GitHub Actions or Railway (scheduled sync)
 - [ ] Future — company-type filtering (tech/CPG/Fortune 500); needs company→category map not in feeds
@@ -244,3 +254,11 @@ We deliberately don't merge on exact URL yet; revisit if same-URL dupes become c
 `locations[]`), and date range (`posted_after` / `posted_before`, else `posted_within_days=30`).
 All filtering runs in Postgres via SQLAlchemy bound parameters — never browser-side, never
 raw-SQL string interpolation. UI result count uses `jobs.length` only until pagination.
+
+
+**Notes (2026-08-23):** Simplify new-grad is on. Extra community feeds: 2027 Simplify/vanshb03
+listings.json, SpeedyApply markdown (SWE + AI), WarpJobs, Heynish DACH. Company boards live in
+`backend/data/companies.json` (seed: 34 firms — Greenhouse/Lever/Ashby/Workday). Titles from
+company boards must match intern / new-grad / early-career (not "internal", not recruiters).
+Growing to ~1k companies means collecting real board slugs or Workday career URLs — not pasting
+a Fortune 1000 name list. Custom Workday domains still need the myworkdayjobs.com URL.

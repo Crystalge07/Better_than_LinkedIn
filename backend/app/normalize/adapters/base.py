@@ -13,6 +13,6 @@ class FeedAdapter(ABC):
     def normalize(self, raw: list | dict) -> list[Job]:
         """Map raw feed JSON to normalized Job objects."""
 
-    def fetch_and_normalize(self, fetch_json) -> list[Job]:
+    def fetch_and_normalize(self, fetch_json, fetch_text=None) -> list[Job]:
         raw = fetch_json(self.feed_url)
         return self.normalize(raw)

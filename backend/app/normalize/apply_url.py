@@ -18,6 +18,9 @@ _APPLY_URL_SCORES: tuple[tuple[str, int], ...] = (
     ("simplify.jobs", 10),
     ("jobright.ai", 10),
     ("zapply", 10),
+    ("warpjobs.com", 15),
+    ("careerkit.me", 10),
+    ("speedyapply.com", 10),
 )
 
 

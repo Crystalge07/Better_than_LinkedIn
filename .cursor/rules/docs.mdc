@@ -1,0 +1,12 @@
+---
+description: Keep README and PROJECT.md in sync with code
+alwaysApply: true
+---
+
+# Documentation stays current
+
+`PROJECT.md` is the spec. `README.md` is how to run it. When behavior, setup, feeds, company boards, schema, or status changes, update those two in the **same change**.
+
+`CLAUDE.md` and `AGENTS.md` are short pointers. Only edit them when architecture or current status changes — not for every feed URL.
+
+Do not leave the docs describing a previous step. Status checkboxes in `PROJECT.md` must match reality.

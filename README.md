@@ -1,16 +1,18 @@
 # Job Aggregator
 
-A job board that ingests community-maintained GitHub JSON feeds into Postgres and serves them via FastAPI + React.
+A job board for internships and new-grad / early-career roles at large companies — CPG, industrials, healthcare, finance, and tech, not LinkedIn and not senior SWE spam.
 
-**Current status: Step 4** — DB-side filter/search (title, location, date range, free-text).
+It ingests community GitHub JSON feeds **and** public company career-board JSON (Greenhouse, Lever, Ashby, Workday) into Postgres, then serves them via FastAPI + React.
+
+**Current status:** Steps 1–4 plus Simplify new-grad and company-board pulls. Application tracker and deploy are next.
 
 ## Architecture
 
 ```
-GitHub JSON feeds → fetch → normalize (adapters) → sync (diff/upsert) → Postgres → serve (FastAPI) → React UI
+GitHub JSON feeds + company ATS JSON → fetch → normalize → sync (diff/upsert) → Postgres → serve (FastAPI) → React UI
 ```
 
-The web layer reads **only** from Postgres. Feed fetching happens via the sync script (every 60 min in production).
+The web layer reads **only** from Postgres. GitHub feeds and company boards are fetched only by the sync script (every 60 min in production).
 
 ## Prerequisites
 
@@ -93,30 +95,23 @@ Open http://localhost:5173
 ```
 backend/
   app/
-    schemas/job.py              # Internal Job contract (Pydantic)
-    fetch/client.py             # HTTP fetch for feed URLs
+    schemas/job.py
+    fetch/client.py             # GET/POST for feeds and ATS JSON
     normalize/
-      fingerprint.py            # Normalization + fingerprint hash
-      apply_url.py              # URL conflict guard + apply_url scoring
-      dedupe.py                 # Pure merge_jobs / merge_job_group
-      adapters/
-        base.py                 # FeedAdapter ABC
-        listings_json.py        # Shared listings.json field mapping
-        simplify_internships.py # SimplifyJobs Summer2026-Internships
-        vanshb03_new_grad.py    # vanshb03 New-Grad-2026
+      fingerprint.py
+      apply_url.py
+      dates.py
+      dedupe.py
+      adapters/                 # GitHub / community JSON + markdown feeds
+    ats/                        # Greenhouse / Lever / Ashby / Workday
     store/
-      models.py                 # SQLAlchemy ORM
-      database.py
-      repository.py             # Sync diff/upsert + list
-    sync/
-      runner.py                 # Fetch feeds, orchestrate sync
-    serve/main.py               # FastAPI app
-  scripts/sync.py               # Scheduled sync entrypoint
-  scripts/migrate_step3.sql     # DB migration for dedupe URL guard
-  scripts/ingest.py             # Deprecated wrapper → sync
-  tests/                        # pytest (pure dedupe/fingerprint tests)
+    sync/runner.py              # Feeds + company boards → Postgres
+    serve/main.py
+  data/companies.json           # Company career boards to poll
+  scripts/sync.py
+  tests/
 frontend/
-  src/App.jsx                   # Plain job list
+  src/App.jsx
 ```
 
 ## Job schema notes
@@ -156,7 +151,32 @@ Filtering happens in the database; the frontend must not filter the full dataset
 | Tag | Feed |
 |-----|------|
 | `simplify_internships` | https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json |
+| `simplify_internships_2027` | https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/.github/scripts/listings.json |
+| `simplify_new_grad` | https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json |
 | `vanshb03_new_grad` | https://raw.githubusercontent.com/vanshb03/New-Grad-2026/dev/.github/scripts/listings.json |
+| `vanshb03_new_grad_2027` | https://raw.githubusercontent.com/vanshb03/New-Grad-2027/dev/.github/scripts/listings.json |
+| `speedyapply_swe_2027` | SpeedyApply SWE markdown tables (USA/intl intern + new grad) |
+| `speedyapply_ai_2027` | SpeedyApply AI/ML markdown tables (linked from the SWE repo) |
+| `warpjobs` | https://warpjobs.com/jobs.json (from awesome-job-boards) |
+| `heynish_dach` | https://raw.githubusercontent.com/heynish/werkstudent-praktikum-jobs/main/jobs.json (nested GitHub list) |
+| `greenhouse:*` / `lever:*` / `ashby:*` / `workday:*` | Company boards in `backend/data/companies.json` |
+
+LinkedIn / Indeed / Glassdoor from [awesome-job-boards](https://github.com/emredurukn/awesome-job-boards) are **not** scraped. We only ingest boards that publish a public JSON or GitHub markdown feed.
+
+## Company boards
+
+You cannot ingest ~1,000 companies from **names alone**. Each row in `backend/data/companies.json` needs the public job-board identity:
+
+| ATS | What to put in the JSON |
+|-----|-------------------------|
+| greenhouse | `"ats": "greenhouse", "board": "stripe"` or `career_url` like `https://job-boards.greenhouse.io/stripe` |
+| lever | `"ats": "lever", "board": "spotify"` or `https://jobs.lever.co/spotify` |
+| ashby | `"ats": "ashby", "board": "openai"` or `https://jobs.ashbyhq.com/openai` |
+| workday | `"ats": "workday", "career_url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"` (host + site slug, not just "NVIDIA") |
+
+Sync polls those JSON APIs, then **keeps intern / new-grad / early-career titles only**. Workday custom domains (e.g. careers.nike.com) are not auto-discovered; paste the underlying `*.myworkdayjobs.com/...` URL.
+
+A seed list of large companies is already in `companies.json`. Add more rows there; do not invent 1k unverified slugs.
 
 ## Tests
 

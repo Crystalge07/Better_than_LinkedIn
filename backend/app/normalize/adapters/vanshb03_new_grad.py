@@ -1,34 +1,19 @@
-"""Adapter for vanshb03 New-Grad-2026 feed."""
+"""Adapter for vanshb03 new-grad listings.json feeds."""
 
-from datetime import datetime, timezone
-
-from app.normalize.adapters.base import FeedAdapter
-from app.normalize.adapters.listings_json import map_listing_item
-from app.schemas.job import Job
+from app.normalize.adapters.listings_json import ListingsJsonAdapter
 
 FEED_URL = (
     "https://raw.githubusercontent.com/vanshb03/New-Grad-2026/dev/"
     ".github/scripts/listings.json"
 )
+FEED_URL_2027 = (
+    "https://raw.githubusercontent.com/vanshb03/New-Grad-2027/dev/"
+    ".github/scripts/listings.json"
+)
 FEED_TAG = "vanshb03_new_grad"
+FEED_TAG_2027 = "vanshb03_new_grad_2027"
 
 
-class Vanshb03NewGradAdapter(FeedAdapter):
-    source_name = FEED_TAG
-    feed_url = FEED_URL
-
-    def normalize(self, raw: list | dict) -> list[Job]:
-        if not isinstance(raw, list):
-            raise ValueError(f"Expected list from {self.source_name}, got {type(raw).__name__}")
-
-        now = datetime.now(timezone.utc)
-        jobs: list[Job] = []
-
-        for item in raw:
-            if not isinstance(item, dict):
-                continue
-            job = map_listing_item(item, feed_tag=self.source_name, seen_at=now)
-            if job is not None:
-                jobs.append(job)
-
-        return jobs
+class Vanshb03NewGradAdapter(ListingsJsonAdapter):
+    def __init__(self, source_name: str = FEED_TAG, feed_url: str = FEED_URL) -> None:
+        super().__init__(source_name, feed_url)
