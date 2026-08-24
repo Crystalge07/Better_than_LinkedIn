@@ -184,6 +184,8 @@ Build `fingerprint` = hash of (normalized_company + normalized_title + normalize
 Match on fingerprint. When multiple records share a fingerprint:
 - keep earliest date_posted
 - keep the most direct apply_url (prefer real ATS/company URL over tracking links)
+- never send Apply through a middleman board (WarpJobs / AI Infra Jobs, etc.);
+  resolve those listings to the company Greenhouse/Lever/Ashby posting
 - record ALL contributing feeds in `sources`
 
 Dedupe logic must be PURE (no DB/network inside it) and UNIT-TESTED with REAL duplicate

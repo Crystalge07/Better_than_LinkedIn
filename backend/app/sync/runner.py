@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.ats.company_date import overlay_company_posted_dates
+from app.ats.direct_apply import resolve_company_apply_urls
 from app.ats.runner import fetch_company_jobs
 from app.fetch.client import HttpFetcher, fetch_json, fetch_text
 from app.normalize.adapters.base import FeedAdapter
@@ -85,6 +86,9 @@ def run_sync(session: Session) -> SyncRunStats:
             http.fetch_json, http.post_json
         )
         fetched_jobs.extend(board_jobs)
+        fetched_jobs = resolve_company_apply_urls(
+            fetched_jobs, fetch_text=http.fetch_text
+        )
         fetched_jobs = overlay_company_posted_dates(
             fetched_jobs, fetch_json=http.fetch_json
         )

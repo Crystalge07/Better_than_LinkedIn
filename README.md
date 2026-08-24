@@ -123,6 +123,7 @@ frontend/
 | `source_job_id` | Native `id` from the feed JSON |
 | `source` | Feed tag (e.g. `simplify_internships`) |
 | `date_posted` | When the company posted the role on its ATS, not when an aggregator listed it |
+| `apply_url` | Company career/ATS posting, not a middleman job board |
 
 ## API
 
