@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import httpx
+
 from app.ats.ashby import ashby_jobs_url
 from app.ats.career_url import ParsedBoard, canonical_career_url
 from app.ats.greenhouse import greenhouse_board_url, greenhouse_jobs_url
@@ -96,10 +98,22 @@ def _probe_ashby(board: str, fetch_json) -> None:
 def _probe_workday(parsed: ParsedBoard, post_json) -> None:
     url = workday_jobs_url(parsed)
     headers = workday_referer_headers(parsed)
-    payload = workday_page_payload(offset=0, search_text="")
-    data = post_json(url, payload, extra_headers=headers)
-    if not isinstance(data, dict) or "jobPostings" not in data:
-        raise ValueError("Workday payload missing jobPostings list")
+    last_error: Exception | None = None
+    for search_text in ("", "intern"):
+        payload = workday_page_payload(offset=0, search_text=search_text)
+        try:
+            data = post_json(url, payload, extra_headers=headers)
+        except httpx.HTTPStatusError as exc:
+            last_error = exc
+            if exc.response is not None and exc.response.status_code == 422:
+                continue
+            raise
+        if isinstance(data, dict) and "jobPostings" in data:
+            return
+        last_error = ValueError("Workday payload missing jobPostings list")
+    if last_error:
+        raise last_error
+    raise ValueError("Workday payload missing jobPostings list")
 
 
 def _fallback_name(parsed: ParsedBoard) -> str:

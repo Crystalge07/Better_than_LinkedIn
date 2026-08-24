@@ -26,8 +26,10 @@ source early. Aggregating them = seeing jobs before the big boards do.
 **What this is NOT (scope boundaries):**
 - We do NOT HTML-scrape career pages or log into ATS products.
 - We DO poll public job-board JSON APIs (Greenhouse/Lever/Ashby documented boards, Workday CXS)
-  when a company is listed with a board slug or `*.myworkdayjobs.com` career URL.
+  when a company is listed with a board slug or `*.myworkdayjobs.com` / `*.myworkdaysite.com`
+  career URL.
 - A list of 1,000 **names** is not enough. Each company needs its board identifier.
+  `scripts/add_companies.py` probes the JSON API and only writes boards that respond.
 - We are an aggregator + a good interface on top. That's the whole product.
 
 ---
@@ -85,7 +87,7 @@ STEP 1 uses ONLY the first feed. Others come in at STEP 3.
 | STEP 3 (2nd source, creates real dupes) | vanshb03 new-grad | https://raw.githubusercontent.com/vanshb03/New-Grad-2026/dev/.github/scripts/listings.json |
 | STEP 3+ (now on) | SimplifyJobs new-grad | https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json |
 | Extra community | Simplify internships 2027, vanshb03 2027, SpeedyApply SWE/AI markdown, WarpJobs JSON, Heynish DACH internships | see README Feeds table |
-| Ongoing | Company boards | `backend/data/companies.json` (Greenhouse / Lever / Ashby / Workday JSON) |
+| Ongoing | Company boards | `backend/data/companies.json` (~3,100 probed Greenhouse / Lever / Ashby / Workday JSON boards). Grow with `scripts/add_companies.py`, not name lists. |
 
 These feeds update roughly every 30 min. Poll no more often than every 30–60 min.
 Trusted spine = SimplifyJobs. vanshb03 second. Others (zapply/jobright) are lead-gen for
@@ -264,7 +266,10 @@ raw-SQL string interpolation. UI result count uses `jobs.length` only until pagi
 
 **Notes (2026-08-23):** Simplify new-grad is on. Extra community feeds: 2027 Simplify/vanshb03
 listings.json, SpeedyApply markdown (SWE + AI), WarpJobs, Heynish DACH. Company boards live in
-`backend/data/companies.json` (seed: 34 firms — Greenhouse/Lever/Ashby/Workday). Titles from
-company boards must match intern / new-grad / early-career (not "internal", not recruiters).
-Growing to ~1k companies means collecting real board slugs or Workday career URLs — not pasting
-a Fortune 1000 name list. Custom Workday domains still need the myworkdayjobs.com URL.
+`backend/data/companies.json` (~3,100 probed Greenhouse/Lever/Ashby/Workday boards, harvested from
+community apply URLs + Fortune/CPG seeds). Titles from company boards must match intern /
+new-grad / early-career (not "internal", not recruiters). Add boards with
+`scripts/add_companies.py --url ... --write` or `--from-feeds --write`; the helper probes the
+public JSON API and skips failures. Workday CXS searches intern / new grad / co-op / early career
+(5 pages) so a multi-thousand-board sync stays tractable. Custom Workday marketing domains still
+need the myworkdayjobs.com or myworkdaysite.com URL.

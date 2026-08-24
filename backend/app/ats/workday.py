@@ -9,14 +9,12 @@ from app.ats.posted_on import parse_workday_posted_on
 from app.schemas.job import Job
 
 WORKDAY_PAGE_SIZE = 20
-WORKDAY_MAX_PAGES = 10
+WORKDAY_MAX_PAGES = 5
 WORKDAY_SEARCHES = (
-    "internship",
+    "intern",
     "new grad",
-    "new graduate",
     "co-op",
     "early career",
-    "university hire",
 )
 
 

@@ -30,3 +30,9 @@ def test_skips_name_only_entry(tmp_path):
     path = tmp_path / "companies.json"
     path.write_text(json.dumps({"companies": [{"name": "Nike"}]}))
     assert load_company_boards(path) == []
+
+
+def test_checked_in_companies_json_loads():
+    boards = load_company_boards()
+    assert len(boards) >= 1000
+    assert {board.ats for board in boards} <= {"greenhouse", "lever", "ashby", "workday"}

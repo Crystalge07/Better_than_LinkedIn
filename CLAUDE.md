@@ -17,7 +17,8 @@ The UI reads **only Postgres**. Ingestion is `backend/scripts/sync.py`.
 
 - `backend/app/normalize/adapters/` — GitHub feed adapters
 - `backend/app/ats/` — Greenhouse / Lever / Ashby / Workday mappers + company runner
-- `backend/data/companies.json` — company list (name + ATS board or career URL)
+- `backend/data/companies.json` — ~3,100 probed company boards (name + ATS board or career URL)
+- `backend/scripts/add_companies.py` — verify public JSON APIs, then merge into companies.json
 - `backend/app/sync/runner.py` — orchestrates feeds + boards into Postgres
 - `frontend/src/App.jsx` — filterable list
 
@@ -31,6 +32,6 @@ The UI reads **only Postgres**. Ingestion is `backend/scripts/sync.py`.
 
 ## Current status
 
-Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and a 34-company seed list. `date_posted` is the company ATS first-published time when the apply URL is Greenhouse/Lever/Ashby; aggregator listing ages are fallback only. Apply links from WarpJobs resolve to the company ATS posting, not the aggregator page.
+Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and ~3,100 probed boards in `companies.json`. `date_posted` is the company ATS first-published time when the apply URL is Greenhouse/Lever/Ashby; aggregator listing ages are fallback only. Apply links from WarpJobs resolve to the company ATS posting, not the aggregator page.
 
-Next: application tracker (accounts), hosted deploy, grow `companies.json` toward 1k firms with real career URLs. Workday custom domains (careers.nike.com) are not auto-discovered yet.
+Next: application tracker (accounts), hosted deploy. Grow the company list with `scripts/add_companies.py` (real career URLs only). Workday custom marketing domains (careers.nike.com) still need the myworkdayjobs.com / myworkdaysite.com URL.

@@ -107,8 +107,10 @@ backend/
     store/
     sync/runner.py              # Feeds + company boards → Postgres
     serve/main.py
-  data/companies.json           # Company career boards to poll
+  data/companies.json           # Probed company career boards to poll
+  data/company_url_seeds.json   # Extra Fortune/CPG URLs for add_companies.py
   scripts/sync.py
+  scripts/add_companies.py      # Verify ATS JSON, merge into companies.json
   tests/
 frontend/
   src/App.jsx
@@ -167,7 +169,7 @@ LinkedIn / Indeed / Glassdoor from [awesome-job-boards](https://github.com/emred
 
 ## Company boards
 
-You cannot ingest ~1,000 companies from **names alone**. Each row in `backend/data/companies.json` needs the public job-board identity:
+You cannot ingest companies from **names alone**. Each row in `backend/data/companies.json` needs the public job-board identity. The checked-in list is ~3,100 boards whose JSON APIs were probed successfully (Greenhouse, Lever, Ashby, Workday).
 
 | ATS | What to put in the JSON |
 |-----|-------------------------|
@@ -176,9 +178,23 @@ You cannot ingest ~1,000 companies from **names alone**. Each row in `backend/da
 | ashby | `"ats": "ashby", "board": "openai"` or `https://jobs.ashbyhq.com/openai` |
 | workday | `"ats": "workday", "career_url": "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite"` (host + site slug, not just "NVIDIA") |
 
-Sync polls those JSON APIs, then **keeps intern / new-grad / early-career titles only**. Workday custom domains (e.g. careers.nike.com) are not auto-discovered; paste the underlying `*.myworkdayjobs.com/...` URL.
+Sync polls those JSON APIs, then **keeps intern / new-grad / early-career titles only**. Workday custom marketing domains (e.g. careers.nike.com) still need the underlying `*.myworkdayjobs.com` or `*.myworkdaysite.com` URL.
 
-A seed list of large companies is already in `companies.json`. Add more rows there; do not invent 1k unverified slugs.
+### Add more companies
+
+Do not invent slugs. Probe the public JSON API first:
+
+```bash
+cd backend
+source .venv/bin/activate
+# one career URL
+PYTHONPATH=. python3 scripts/add_companies.py --url 'https://jobs.lever.co/spotify' --write
+
+# harvest unique boards from community listings.json + data/company_url_seeds.json
+PYTHONPATH=. python3 scripts/add_companies.py --from-feeds --write
+```
+
+Dry-run unless you pass `--write`. Failed probes are skipped; existing rows are kept.
 
 ## Tests
 

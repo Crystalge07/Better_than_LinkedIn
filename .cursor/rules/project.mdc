@@ -11,7 +11,7 @@ Data flow is one way: GitHub JSON feeds and public ATS job-board JSON -> normali
 
 - Keep fetch / normalize / dedupe / store / serve in separate modules.
 - Prefer public JSON job-board APIs (Greenhouse, Lever, Ashby, Workday CXS). Do not HTML-scrape career pages or log in.
-- Company names alone are not a source. `backend/data/companies.json` needs an ATS board slug or career URL.
+- Company names alone are not a source. `backend/data/companies.json` needs an ATS board slug or career URL. Add boards with `scripts/add_companies.py` after a JSON-API probe.
 - Company-board pulls keep intern / new-grad / early-career titles only.
 - Config via env vars. Never commit secrets. `date_posted` is a real datetime.
 - Sync must isolate per-feed and per-company failures. Do not delete stale jobs; mark `active=false`.

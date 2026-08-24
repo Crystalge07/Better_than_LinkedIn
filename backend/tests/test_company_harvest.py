@@ -1,5 +1,7 @@
 import json
 
+import httpx
+
 from app.ats.ashby import ashby_jobs_url
 from app.ats.career_url import parse_career_url
 from app.ats.companies_file import merge_company_rows
@@ -65,6 +67,23 @@ def test_probe_greenhouse_ok_with_name_hint():
     assert result.ok
     assert result.name == "Stripe"
     assert calls == ["https://boards-api.greenhouse.io/v1/boards/stripe/jobs"]
+
+
+def test_probe_workday_retries_empty_search_on_422():
+    parsed = parse_career_url("https://walmart.wd5.myworkdayjobs.com/WalmartExternal")
+    searches: list[str] = []
+
+    def post_json(url, payload, extra_headers=None):
+        searches.append(payload["searchText"])
+        if payload["searchText"] == "":
+            request = httpx.Request("POST", url)
+            response = httpx.Response(422, request=request)
+            raise httpx.HTTPStatusError("422", request=request, response=response)
+        return {"jobPostings": []}
+
+    result = probe_board(parsed, fetch_json=lambda url: {}, post_json=post_json)
+    assert result.ok
+    assert searches == ["", "intern"]
 
 
 def test_probe_workday_requires_job_postings_key():
