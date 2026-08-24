@@ -31,6 +31,6 @@ The UI reads **only Postgres**. Ingestion is `backend/scripts/sync.py`.
 
 ## Current status
 
-Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and a 34-company seed list.
+Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and a 34-company seed list. `date_posted` is the company ATS first-published time when the apply URL is Greenhouse/Lever/Ashby; aggregator listing ages are fallback only.
 
 Next: application tracker (accounts), hosted deploy, grow `companies.json` toward 1k firms with real career URLs. Workday custom domains (careers.nike.com) are not auto-discovered yet.

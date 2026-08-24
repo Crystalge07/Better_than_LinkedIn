@@ -1,6 +1,7 @@
 """Ashby job-board JSON mapper."""
 
 from datetime import datetime
+from urllib.parse import quote
 
 from app.ats.early_career import is_early_career
 from app.ats.map_job import job_from_board
@@ -9,7 +10,7 @@ from app.schemas.job import Job
 
 
 def ashby_jobs_url(board: str) -> str:
-    return f"https://api.ashbyhq.com/posting-api/job-board/{board}"
+    return f"https://api.ashbyhq.com/posting-api/job-board/{quote(board, safe='')}"
 
 
 def map_ashby_jobs(

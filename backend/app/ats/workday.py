@@ -26,8 +26,16 @@ def workday_jobs_url(board: ParsedBoard) -> str:
     return f"https://{board.host}/wday/cxs/{board.tenant}/{board.site}/jobs"
 
 
+def workday_referer_headers(board: ParsedBoard) -> dict[str, str]:
+    if board.host and "myworkdaysite.com" in board.host:
+        return {"Referer": f"https://{board.host}/recruiting/{board.tenant}/{board.site}"}
+    return {"Referer": f"https://{board.host}/{board.site}"}
+
+
 def workday_apply_url(board: ParsedBoard, external_path: str) -> str:
     path = external_path if external_path.startswith("/") else f"/{external_path}"
+    if board.host and "myworkdaysite.com" in board.host:
+        return f"https://{board.host}/recruiting/{board.tenant}/{board.site}{path}"
     return f"https://{board.host}/en-US/{board.site}{path}"
 
 

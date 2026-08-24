@@ -16,6 +16,7 @@ from app.ats.workday import (
     map_workday_page,
     workday_jobs_url,
     workday_page_payload,
+    workday_referer_headers,
 )
 from app.schemas.job import Job
 
@@ -68,7 +69,7 @@ def _fetch_one(company: CompanyBoard, fetch_json, post_json, seen_at: datetime) 
 
 def _fetch_workday(company: CompanyBoard, post_json, seen_at: datetime) -> list[Job]:
     url = workday_jobs_url(company.parsed)
-    headers = {"Referer": f"https://{company.parsed.host}/{company.parsed.site}"}
+    headers = workday_referer_headers(company.parsed)
     jobs: list[Job] = []
     seen_ids: set[str] = set()
     for search_text in WORKDAY_SEARCHES:

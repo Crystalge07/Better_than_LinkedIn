@@ -8,8 +8,12 @@ from app.ats.posted_on import parse_iso_datetime
 from app.schemas.job import Job
 
 
+def greenhouse_board_url(board: str) -> str:
+    return f"https://boards-api.greenhouse.io/v1/boards/{board}"
+
+
 def greenhouse_jobs_url(board: str) -> str:
-    return f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs"
+    return f"{greenhouse_board_url(board)}/jobs"
 
 
 def map_greenhouse_jobs(
@@ -33,7 +37,7 @@ def map_greenhouse_jobs(
         location = item.get("location") or {}
         location_name = location.get("name") if isinstance(location, dict) else None
         date_posted = parse_iso_datetime(
-            item.get("first_published") or item.get("updated_at"),
+            item.get("first_published") or item.get("first_published"),
             fallback=seen_at,
         )
         job = job_from_board(

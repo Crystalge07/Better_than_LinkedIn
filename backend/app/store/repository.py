@@ -104,7 +104,10 @@ def _apply_job_update(row: JobRow, job: Job, synced_at: datetime) -> bool:
     set_if_different("title", job.title)
     set_if_different("locations", job.locations)
     set_if_different("apply_url", job.apply_url)
-    set_if_different("date_posted", job.date_posted)
+    # Never move posted date forward — aggregator recrawls are not new postings.
+    if job.date_posted < row.date_posted:
+        row.date_posted = job.date_posted
+        changed = True
     set_if_different("source", job.source)
     set_if_different("source_job_id", job.source_job_id)
     set_if_different("posting_active", job.posting_active)

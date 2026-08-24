@@ -122,6 +122,7 @@ frontend/
 | `posting_active` | Feed flag — applications open/closed on the source site |
 | `source_job_id` | Native `id` from the feed JSON |
 | `source` | Feed tag (e.g. `simplify_internships`) |
+| `date_posted` | When the company posted the role on its ATS, not when an aggregator listed it |
 
 ## API
 

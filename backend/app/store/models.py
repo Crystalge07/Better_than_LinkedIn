@@ -22,7 +22,7 @@ class JobRow(Base):
     apply_url: Mapped[str] = mapped_column(Text, nullable=False)
     date_posted: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(128), nullable=False)
-    source_job_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_job_id: Mapped[str] = mapped_column(Text, nullable=False)
     sources: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
     first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

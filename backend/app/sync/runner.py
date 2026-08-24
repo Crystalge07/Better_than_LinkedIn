@@ -6,8 +6,9 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.ats.company_date import overlay_company_posted_dates
 from app.ats.runner import fetch_company_jobs
-from app.fetch.client import fetch_json, fetch_text, post_json
+from app.fetch.client import HttpFetcher, fetch_json, fetch_text
 from app.normalize.adapters.base import FeedAdapter
 from app.normalize.adapters.heynish_dach import HeynishDachAdapter
 from app.normalize.adapters.simplify_internships import (
@@ -79,10 +80,14 @@ def run_sync(session: Session) -> SyncRunStats:
         fetched_jobs.extend(jobs)
         logger.info("Normalized %d jobs from %s", len(jobs), adapter.source_name)
 
-    board_jobs, board_sources, boards_ok, boards_failed = fetch_company_jobs(
-        fetch_json, post_json
-    )
-    fetched_jobs.extend(board_jobs)
+    with HttpFetcher() as http:
+        board_jobs, board_sources, boards_ok, boards_failed = fetch_company_jobs(
+            http.fetch_json, http.post_json
+        )
+        fetched_jobs.extend(board_jobs)
+        fetched_jobs = overlay_company_posted_dates(
+            fetched_jobs, fetch_json=http.fetch_json
+        )
     successful_sources.update(board_sources)
     logger.info(
         "Company boards: jobs=%d ok=%d failed=%d",

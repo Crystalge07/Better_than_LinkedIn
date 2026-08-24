@@ -121,6 +121,10 @@ Map to our Job schema:
 - locations (list[str])           -> locations   (already an array, already "City, ST")
 - url (str)                       -> apply_url
 - date_posted (int, UNIX SECONDS) -> date_posted  (CONVERT to datetime — not a string)
+  After ingest, if the apply URL is Greenhouse/Lever/Ashby, overwrite date_posted
+  with the company board's first-published / created / published time. Aggregator
+  "listed 2d ago" ages are not the posting date. Keep the earliest date we have
+  seen; never move date_posted forward because a third-party board recrawled it.
 - active (bool)                   -> feed_active   (feed's own open/closed flag)
 - id (str)                        -> source_native_id
 - source (str)                    -> source tag

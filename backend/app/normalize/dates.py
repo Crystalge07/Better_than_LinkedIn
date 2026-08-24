@@ -5,7 +5,11 @@ from __future__ import annotations
 import re
 from datetime import datetime, timedelta, timezone
 
-_RELATIVE_AGE = re.compile(r"^\s*(\d+)\s*([dhm])\s*$", re.IGNORECASE)
+# Months before `m` so `1mo` is not read as 1 minute.
+_RELATIVE_AGE = re.compile(
+    r"^\s*(\d+)\s*(years?|yrs?|y|months?|mos?|weeks?|wks?|w|days?|d|hours?|h|minutes?|mins?|m)\s*$",
+    re.IGNORECASE,
+)
 
 
 def parse_feed_datetime(value: object, *, now: datetime | None = None) -> datetime:
@@ -27,10 +31,7 @@ def parse_feed_datetime(value: object, *, now: datetime | None = None) -> dateti
 
     relative = _RELATIVE_AGE.match(text)
     if relative:
-        amount = int(relative.group(1))
-        unit = relative.group(2).lower()
-        delta = {"d": timedelta(days=amount), "h": timedelta(hours=amount), "m": timedelta(minutes=amount)}[unit]
-        return now - delta
+        return now - _relative_delta(int(relative.group(1)), relative.group(2).lower())
 
     if text.isdigit():
         return _from_unix(int(text), now)
@@ -43,6 +44,20 @@ def parse_feed_datetime(value: object, *, now: datetime | None = None) -> dateti
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def _relative_delta(amount: int, unit: str) -> timedelta:
+    if unit in {"year", "years", "yr", "yrs", "y"}:
+        return timedelta(days=365 * amount)
+    if unit in {"month", "months", "mo", "mos"}:
+        return timedelta(days=30 * amount)
+    if unit in {"week", "weeks", "wk", "wks", "w"}:
+        return timedelta(weeks=amount)
+    if unit in {"day", "days", "d"}:
+        return timedelta(days=amount)
+    if unit in {"hour", "hours", "h"}:
+        return timedelta(hours=amount)
+    return timedelta(minutes=amount)
 
 
 def _from_unix(value: int | float, fallback: datetime) -> datetime:
