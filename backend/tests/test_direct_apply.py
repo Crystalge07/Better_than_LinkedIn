@@ -5,7 +5,7 @@ from app.ats.direct_apply import (
     is_aggregator_apply_url,
     resolve_company_apply_urls,
 )
-from app.ats.job_url import parse_ats_identifier
+from app.ats.job_url import canonical_tesla_apply_url, parse_ats_identifier, tesla_job_id
 from app.schemas.job import Job
 
 NOW = datetime(2026, 8, 23, tzinfo=timezone.utc)
@@ -20,6 +20,34 @@ _WARPJOBS_HTML = """
 </head>
 <body>
 <a href="https://job-boards.greenhouse.io/togetherai/jobs/5214645007">Apply</a>
+</body></html>
+"""
+
+_COMPANY_CAREER_HTML = """
+<html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org/","@type":"JobPosting","title":"Software Engineer",
+ "identifier":{"@type":"PropertyValue","name":"Stripe","value":"gh-stripe-7532733"},
+ "url":"https://warpjobs.com/jobs/stripe-software-engineer-1/"}
+</script>
+</head>
+<body>
+<a href="https://stripe.com/jobs/search?gh_jid=7532733">Apply at Stripe</a>
+<a href="https://job-boards.greenhouse.io/stripe/jobs/7532733">Greenhouse</a>
+</body></html>
+"""
+
+_TESLA_AGGREGATOR_HTML = """
+<html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org/","@type":"JobPosting","title":"Software Engineer Intern",
+ "identifier":{"@type":"PropertyValue","name":"Tesla","value":"gh-tesla-999"},
+ "url":"https://warpjobs.com/jobs/tesla-software-engineer-intern-1/"}
+</script>
+</head>
+<body>
+<a href="https://www.tesla.com/careers/search/job/281271">Apply on Tesla</a>
+<a href="https://job-boards.greenhouse.io/tesla/jobs/999">Greenhouse copy</a>
 </body></html>
 """
 
@@ -74,6 +102,60 @@ def test_company_ats_url_is_left_alone():
 
 def test_warpjobs_is_aggregator():
     assert is_aggregator_apply_url("https://warpjobs.com/jobs/foo/")
+    assert is_aggregator_apply_url("https://simplify.jobs/p/abc")
     assert not is_aggregator_apply_url(
         "https://job-boards.greenhouse.io/togetherai/jobs/1"
     )
+    assert not is_aggregator_apply_url("https://www.tesla.com/careers/search/job/281271")
+
+
+def test_prefers_company_career_posting_over_ats_job_board():
+    tesla = company_apply_url_from_html(_TESLA_AGGREGATOR_HTML)
+    assert tesla == "https://www.tesla.com/careers/search/job/281271"
+    stripe = company_apply_url_from_html(_COMPANY_CAREER_HTML)
+    assert stripe == "https://stripe.com/jobs/search?gh_jid=7532733"
+
+
+def test_resolve_rewrites_aggregator_to_tesla_posting_with_slug():
+    job = _job(
+        company="Tesla",
+        title="Software Engineer Intern - Maps",
+        apply_url="https://warpjobs.com/jobs/tesla-software-engineer-intern-1/",
+    )
+    out = resolve_company_apply_urls(
+        [job], fetch_text=lambda _url: _TESLA_AGGREGATOR_HTML
+    )
+    assert out[0].apply_url == (
+        "https://www.tesla.com/careers/search/job/software-engineer-intern-maps-281271"
+    )
+
+
+def test_canonicalizes_id_only_tesla_urls_without_fetching():
+    job = _job(
+        company="Tesla",
+        title="Software Engineer Intern - Maps & Navigation Validation",
+        apply_url="https://www.tesla.com/careers/search/job/281271",
+    )
+    calls: list[str] = []
+    out = resolve_company_apply_urls(
+        [job], fetch_text=lambda url: calls.append(url) or ""
+    )
+    assert calls == []
+    assert out[0].apply_url == (
+        "https://www.tesla.com/careers/search/job/"
+        "software-engineer-intern-maps-navigation-validation-281271"
+    )
+
+
+def test_tesla_job_id_from_slug_or_numeric_path():
+    assert tesla_job_id("https://www.tesla.com/careers/search/job/281271") == "281271"
+    assert (
+        tesla_job_id(
+            "https://www.tesla.com/careers/search/job/internship-software-269198"
+        )
+        == "269198"
+    )
+    assert canonical_tesla_apply_url(
+        "https://www.tesla.com/careers/search/job/281271",
+        "Software Engineer Intern",
+    ) == "https://www.tesla.com/careers/search/job/software-engineer-intern-281271"

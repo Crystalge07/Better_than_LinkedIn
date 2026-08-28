@@ -32,6 +32,6 @@ The UI reads **only Postgres**. Ingestion is `backend/scripts/sync.py`.
 
 ## Current status
 
-Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and ~3,100 probed boards in `companies.json`. `date_posted` is the company ATS first-published time when the apply URL is Greenhouse/Lever/Ashby; aggregator listing ages are fallback only. Apply links from WarpJobs resolve to the company ATS posting, not the aggregator page.
+Shipped: schema, scheduled sync, community feeds (Simplify, vanshb03, SpeedyApply, WarpJobs, Heynish), DB filters/search, company-board ingestion (Greenhouse/Lever/Ashby/Workday) with an early-career title filter and ~3,100 probed boards in `companies.json`. Apply links skip middleman boards and go to the company posting for every role (employer career URL such as stripe.com / tesla.com / Workday, not WarpJobs or job-boards.greenhouse.io when a company page exists). `date_posted` is the company career-page / ATS first-published time when we can resolve it; aggregator listing ages are fallback only.
 
 Next: application tracker (accounts), hosted deploy. Grow the company list with `scripts/add_companies.py` (real career URLs only). Workday custom marketing domains (careers.nike.com) still need the myworkdayjobs.com / myworkdaysite.com URL.

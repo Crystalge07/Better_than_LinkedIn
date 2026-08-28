@@ -1,9 +1,8 @@
-"""Rewrite aggregator apply links to the company ATS posting.
+"""Rewrite aggregator apply links to the company career posting.
 
-WarpJobs / AI Infra Jobs (and similar boards) host a copy of the listing and
-point Apply at themselves. Their JobPosting JSON-LD includes an ATS identifier
-(`gh-togetherai-5214645007`) and/or the real Greenhouse/Lever/Ashby URL.
-We read that structured data from the aggregator page — not company career HTML.
+WarpJobs / Simplify.jobs (and similar boards) host a copy of the listing and
+point Apply at themselves. Prefer the employer's own posting (Tesla careers,
+Workday, Greenhouse, …) encoded in that page's JSON-LD or apply href.
 """
 
 from __future__ import annotations
@@ -11,12 +10,21 @@ from __future__ import annotations
 import json
 import logging
 import re
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from app.ats.job_url import (
     canonical_ats_apply_url,
+    canonical_company_apply_url,
     parse_ats_identifier,
     parse_ats_job_ref,
+)
+from app.normalize.apply_url import (
+    is_aggregator_apply_url,
+    is_company_career_url,
+    is_hosted_ats_board_url,
+    looks_like_job_posting_url,
+    pick_preferred_apply_url,
+    strip_tracking_query,
 )
 from app.schemas.job import Job
 
@@ -26,62 +34,60 @@ _JSON_LD = re.compile(
     r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.IGNORECASE | re.DOTALL,
 )
-_ATS_HREF = re.compile(
-    r"https://(?:job-boards|boards)\.greenhouse\.io/[^\s\"'<>\\]+"
-    r"|https://jobs\.lever\.co/[^\s\"'<>\\]+"
-    r"|https://jobs\.ashbyhq\.com/[^\s\"'<>\\]+"
-    r"|https://[a-z0-9.-]+\.myworkdayjobs\.com/[^\s\"'<>\\]+",
-    re.IGNORECASE,
-)
+_HREF = re.compile(r"""href\s*=\s*["']([^"'#]+)["']""", re.IGNORECASE)
+_ABS_HTTP = re.compile(r"https://[^\s\"'<>\\]+", re.IGNORECASE)
 
 
-def is_aggregator_apply_url(url: str) -> bool:
-    host = (urlparse(url.strip()).hostname or "").lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host == "warpjobs.com"
-
-
-def company_apply_url_from_html(html: str) -> str | None:
-    """Return the company ATS apply URL encoded in aggregator JobPosting JSON-LD."""
+def company_apply_url_from_html(html: str, *, page_url: str = "") -> str | None:
+    """Return the company career/ATS posting encoded on an aggregator page."""
+    candidates: list[str] = []
     for raw in _JSON_LD.findall(html):
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
             continue
-        found = _from_json_ld(payload)
-        if found:
-            return found
+        candidates.extend(_candidates_from_json_ld(payload))
 
-    match = _ATS_HREF.search(html)
-    if not match:
+    for href in _HREF.findall(html):
+        candidates.append(href)
+    candidates.extend(_ABS_HTTP.findall(html))
+
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw in candidates:
+        url = _clean_url(raw, page_url)
+        if not url or url in seen:
+            continue
+        if is_aggregator_apply_url(url) or not looks_like_job_posting_url(url):
+            continue
+        seen.add(url)
+        cleaned.append(url)
+    if not cleaned:
         return None
-    href = match.group(0).rstrip("\\").rstrip("'\"")
-    ref = parse_ats_job_ref(href)
-    if ref is not None:
-        return canonical_ats_apply_url(ref)
-    return href.split("?")[0]
+    return pick_preferred_apply_url(cleaned)
 
 
 def resolve_company_apply_urls(jobs: list[Job], *, fetch_text) -> list[Job]:
-    """Replace aggregator apply URLs with the company ATS posting when possible."""
+    """Replace aggregator apply URLs with the company career posting when possible."""
     cache: dict[str, str | None] = {}
     updated: list[Job] = []
     resolved = 0
     for job in jobs:
-        if not is_aggregator_apply_url(job.apply_url):
+        apply_url = job.apply_url
+        if is_aggregator_apply_url(apply_url):
+            if apply_url not in cache:
+                cache[apply_url] = _resolve_one(apply_url, fetch_text)
+            direct = cache[apply_url]
+            if direct:
+                resolved += 1
+                apply_url = direct
+        canonical = canonical_company_apply_url(apply_url, job.title)
+        if canonical != job.apply_url:
+            updated.append(job.model_copy(update={"apply_url": canonical}))
+        else:
             updated.append(job)
-            continue
-        if job.apply_url not in cache:
-            cache[job.apply_url] = _resolve_one(job.apply_url, fetch_text)
-        direct = cache[job.apply_url]
-        if not direct:
-            updated.append(job)
-            continue
-        resolved += 1
-        updated.append(job.model_copy(update={"apply_url": direct}))
     if resolved:
-        logger.info("Resolved %d aggregator apply URLs to company ATS postings", resolved)
+        logger.info("Resolved %d aggregator apply URLs to company postings", resolved)
     return updated
 
 
@@ -91,36 +97,35 @@ def _resolve_one(url: str, fetch_text) -> str | None:
     except Exception:
         logger.exception("Failed to fetch aggregator listing %s", url)
         return None
-    return company_apply_url_from_html(html)
+    return company_apply_url_from_html(html, page_url=url)
 
 
-def _from_json_ld(payload: object) -> str | None:
+def _candidates_from_json_ld(payload: object) -> list[str]:
     if isinstance(payload, list):
+        found: list[str] = []
         for item in payload:
-            found = _from_json_ld(item)
-            if found:
-                return found
-        return None
+            found.extend(_candidates_from_json_ld(item))
+        return found
     if not isinstance(payload, dict):
-        return None
-    if payload.get("@type") == "JobPosting":
-        identifier = payload.get("identifier")
-        values = _identifier_values(identifier)
-        for value in values:
-            ref = parse_ats_identifier(str(value))
-            if ref is not None:
-                return canonical_ats_apply_url(ref)
-        for key in ("sameAs", "url"):
-            candidate = payload.get(key)
-            if isinstance(candidate, str):
-                ref = parse_ats_job_ref(candidate)
-                if ref is not None:
-                    return canonical_ats_apply_url(ref)
-        return None
+        return []
     graph = payload.get("@graph")
     if graph is not None:
-        return _from_json_ld(graph)
-    return None
+        return _candidates_from_json_ld(graph)
+    if payload.get("@type") != "JobPosting":
+        return []
+
+    candidates: list[str] = []
+    for value in _identifier_values(payload.get("identifier")):
+        ref = parse_ats_identifier(str(value))
+        if ref is not None:
+            candidates.append(canonical_ats_apply_url(ref))
+    for key in ("sameAs", "url", "applicationUrl"):
+        candidate = payload.get(key)
+        if isinstance(candidate, str):
+            candidates.append(candidate)
+        elif isinstance(candidate, list):
+            candidates.extend(str(item) for item in candidate if item)
+    return candidates
 
 
 def _identifier_values(identifier: object) -> list[str]:
@@ -135,3 +140,24 @@ def _identifier_values(identifier: object) -> list[str]:
             values.extend(_identifier_values(item))
         return values
     return []
+
+
+def _clean_url(raw: str, page_url: str) -> str | None:
+    text = raw.strip().rstrip("\\").rstrip("'\"").replace("\\u003c", "").replace("\\/", "/")
+    if not text or text.startswith("data:") or text.startswith("javascript:"):
+        return None
+    if page_url and not urlparse(text).scheme:
+        text = urljoin(page_url, text)
+    parsed = urlparse(text)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return None
+    if is_company_career_url(text) or (
+        looks_like_job_posting_url(text)
+        and not is_hosted_ats_board_url(text)
+        and not is_aggregator_apply_url(text)
+    ):
+        return strip_tracking_query(text)
+    ref = parse_ats_job_ref(text)
+    if ref is not None and ref.board:
+        return canonical_ats_apply_url(ref)
+    return strip_tracking_query(text)

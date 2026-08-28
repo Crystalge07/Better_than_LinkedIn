@@ -16,6 +16,16 @@ DEFAULT_HEADERS = {
     ),
     "Accept": "application/json",
 }
+TESLA_JSON_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.tesla.com/careers/search/",
+    "Origin": "https://www.tesla.com",
+}
 
 
 def _client(headers: dict | None = None, timeout: httpx.Timeout | None = None) -> httpx.Client:
@@ -34,7 +44,8 @@ class HttpFetcher:
 
     def fetch_json(self, url: str) -> list | dict:
         logger.info("Fetching: %s", url)
-        response = self._http.get(url)
+        headers = TESLA_JSON_HEADERS if "tesla.com/cua-api" in url else None
+        response = self._http.get(url, headers=headers) if headers else self._http.get(url)
         response.raise_for_status()
         return response.json()
 

@@ -123,10 +123,12 @@ Map to our Job schema:
 - locations (list[str])           -> locations   (already an array, already "City, ST")
 - url (str)                       -> apply_url
 - date_posted (int, UNIX SECONDS) -> date_posted  (CONVERT to datetime — not a string)
-  After ingest, if the apply URL is Greenhouse/Lever/Ashby, overwrite date_posted
-  with the company board's first-published / created / published time. Aggregator
-  "listed 2d ago" ages are not the posting date. Keep the earliest date we have
-  seen; never move date_posted forward because a third-party board recrawled it.
+  After ingest, overwrite date_posted with the company's own posting time:
+  Greenhouse/Lever/Ashby first-published / created / published; Workday dates
+  copied from the matching company-board row; Tesla careers JSON when it
+  exposes a published timestamp. Aggregator "listed 2d ago" ages are not the
+  posting date. Keep the earliest date we have seen; never move date_posted
+  forward because a third-party board recrawled it.
 - active (bool)                   -> feed_active   (feed's own open/closed flag)
 - id (str)                        -> source_native_id
 - source (str)                    -> source tag
@@ -185,9 +187,13 @@ Build `fingerprint` = hash of (normalized_company + normalized_title + normalize
 
 Match on fingerprint. When multiple records share a fingerprint:
 - keep earliest date_posted
-- keep the most direct apply_url (prefer real ATS/company URL over tracking links)
-- never send Apply through a middleman board (WarpJobs / AI Infra Jobs, etc.);
-  resolve those listings to the company Greenhouse/Lever/Ashby posting
+- keep the most direct apply_url (prefer the employer's career posting over ATS
+  job-board hosts, and those over tracking links)
+- never send Apply through a middleman board (WarpJobs / AI Infra Jobs,
+  Simplify.jobs, hosted Greenhouse/Lever/Ashby boards, etc.); resolve every
+  listing to the company career posting when the employer publishes one
+  (Tesla `/careers/search/job/{slug}-{id}`, Stripe `gh_jid` career pages,
+  Workday, …)
 - record ALL contributing feeds in `sources`
 
 Dedupe logic must be PURE (no DB/network inside it) and UNIT-TESTED with REAL duplicate
