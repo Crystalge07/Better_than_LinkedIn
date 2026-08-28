@@ -69,7 +69,7 @@ Keep these as SEPARATE modules — no god functions:
 - Backend: Python + FastAPI
 - DB: Postgres (local during dev; hosted Postgres / Supabase later — same Postgres, one env change)
 - ORM/driver: SQLAlchemy or psycopg (agent's choice, state which)
-- Frontend: React (start minimal — a plain list before anything fancy)
+- Frontend: React tabs for Jobs, Applications, and Autofill profile. Tracker + profile persist in localStorage until accounts exist.
 - Scheduled sync: standalone Python worker, runnable on a cron schedule
   (locally by hand during dev; GitHub Actions or Railway for unattended runs later)
 - Config: DB connection read from `DATABASE_URL` env var from DAY ONE.
@@ -248,7 +248,7 @@ Ship at step 1. Every later step is additive.
 - [x] Step 4 — filtering + search
 - [x] Step 4b — Simplify new-grad feed
 - [x] Step 4c — company career-board JSON pulls (early-career title filter + seed list)
-- [ ] Step 5 — application tracker
+- [~] Step 5 — application tracker (spreadsheet in the web app; autofiller submit writes a row via `POST /api/applications`; accounts still to come)
 - [ ] Deploy — Supabase (DB) + GitHub Actions or Railway (scheduled sync)
 - [ ] Future — company-type filtering (tech/CPG/Fortune 500); needs company→category map not in feeds
 

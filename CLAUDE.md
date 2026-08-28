@@ -20,7 +20,7 @@ The UI reads **only Postgres**. Ingestion is `backend/scripts/sync.py`.
 - `backend/data/companies.json` — ~3,100 probed company boards (name + ATS board or career URL)
 - `backend/scripts/add_companies.py` — verify public JSON APIs, then merge into companies.json
 - `backend/app/sync/runner.py` — orchestrates feeds + boards into Postgres
-- `frontend/src/App.jsx` — filterable list
+- `frontend/src/App.jsx` — Jobs / Applications / Autofill profile tabs
 
 ## Working rules
 

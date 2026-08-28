@@ -38,3 +38,23 @@ class JobRow(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+
+class AppliedJobRow(Base):
+    __tablename__ = "applied_jobs"
+
+    id: Mapped[str] = mapped_column(String(1024), primary_key=True)
+    firm: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    location: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    title: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    link: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

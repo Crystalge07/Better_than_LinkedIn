@@ -90,6 +90,8 @@ npm run dev
 
 Open http://localhost:5173
 
+Tabs: **Jobs**, **Applications**, and **Autofill profile**. Applications is a spreadsheet (firm, location, title, link, date). When the ATS autofiller sees you press Submit on Greenhouse or Workday, it posts that posting into this sheet. Reload the unpacked extension after `pnpm --filter @ats-autofill/extension build`.
+
 ## Project layout
 
 ```

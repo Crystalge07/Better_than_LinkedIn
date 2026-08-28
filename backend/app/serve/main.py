@@ -1,11 +1,18 @@
 import logging
 from datetime import date, datetime, time, timedelta, timezone
 
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from app.schemas.application import AppliedJobIn, AppliedJobPatch, AppliedJobRead
 from app.schemas.job import JobRead
+from app.store.applications import (
+    delete_applied_job,
+    list_applied_jobs,
+    patch_applied_job,
+    upsert_applied_job,
+)
 from app.store.database import get_session, init_db
 from app.store.repository import list_jobs
 
@@ -15,7 +22,13 @@ app = FastAPI(title="Job Aggregator", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
+    allow_origin_regex=r"chrome-extension://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,3 +87,38 @@ def get_jobs(
         location=location,
         q=q,
     )
+
+
+@app.get("/api/applications", response_model=list[AppliedJobRead])
+def get_applications(session: Session = Depends(get_session)) -> list[AppliedJobRead]:
+    return list_applied_jobs(session)
+
+
+@app.post("/api/applications", response_model=AppliedJobRead)
+def post_application(
+    incoming: AppliedJobIn,
+    session: Session = Depends(get_session),
+) -> AppliedJobRead:
+    return upsert_applied_job(session, incoming)
+
+
+@app.patch("/api/applications", response_model=AppliedJobRead)
+def patch_application(
+    patch: AppliedJobPatch,
+    id: str = Query(..., min_length=1),
+    session: Session = Depends(get_session),
+) -> AppliedJobRead:
+    updated = patch_applied_job(session, id, patch)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return updated
+
+
+@app.delete("/api/applications")
+def remove_application(
+    id: str = Query(..., min_length=1),
+    session: Session = Depends(get_session),
+) -> dict[str, bool]:
+    if not delete_applied_job(session, id):
+        raise HTTPException(status_code=404, detail="Application not found")
+    return {"ok": True}
